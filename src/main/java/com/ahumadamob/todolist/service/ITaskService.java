@@ -8,4 +8,5 @@ public interface ITaskService {
 	void save(Task task);
 	void delete(Integer id);
 	List<Task> findAll();
+	Task findById(Integer id);
 }

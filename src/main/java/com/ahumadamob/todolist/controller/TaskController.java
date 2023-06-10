@@ -17,11 +17,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.ahumadamob.todolist.entity.Project;
 import com.ahumadamob.todolist.entity.Task;
-import com.ahumadamob.todolist.service.IProjectService;
 import com.ahumadamob.todolist.service.ITaskService;
+import com.ahumadamob.todolist.util.ResponseUtil;
 
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 
@@ -33,57 +33,46 @@ public class TaskController {
 	private ITaskService service;
 	
 	@GetMapping("/all")
-	public ResponseEntity<APIResponse<List<Task>>> getAllTasks(){
-		List<Task> tasks = service.findAll();
-		if(tasks.isEmpty()) {
-			APIResponse<List<Task>> response = new APIResponse<List<Task>>(200, addSingleMessage("No hay tareas"), tasks);
-			return ResponseEntity.status(HttpStatus.OK).body(response);
-		}else {
-			APIResponse<List<Task>> response = new APIResponse<List<Task>>(200, null, tasks);
-			return ResponseEntity.status(HttpStatus.OK).body(response);
-		}
-	};	
+	public ResponseEntity<APIResponse<List<Task>>> getAllTasks() {
+	    List<Task> tasks = service.findAll();
+	    return tasks.isEmpty() ? ResponseUtil.buildNotFoundResponse("No hay tareas")
+	            : ResponseUtil.buildSuccessResponse(tasks);
+	}
 	
 	@GetMapping("{id}")
 	public ResponseEntity<APIResponse<Task>> getTaskById(@PathVariable("id") Integer id){
 		Task task = service.findById(id);
-		if(project == null) {
-			APIResponse<Project> response = new APIResponse<Project>(200, addSingleMessage("No se encontró el proyecto especificado"), project);
-			return ResponseEntity.status(HttpStatus.OK).body(response);			
-		}else {
-			APIResponse<Project> response = new APIResponse<Project>(200, null, project);
-			return ResponseEntity.status(HttpStatus.OK).body(response);
-		}
-	};	
+		return task == null ? ResponseUtil.buildNotFoundResponse("No se encontró la tarea con el identificador proporcionado")
+				: ResponseUtil.buildSuccessResponse(task);	
+	}	
 	
     @PostMapping
-    public ResponseEntity<APIResponse<Project>> createProject(@RequestBody Project project, BindingResult result) {
-        service.save(project);
-        APIResponse<Project> response = new APIResponse<Project>(201, addSingleMessage("Proyecto creado satisfactoriamente"), project);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    public ResponseEntity<APIResponse<Task>> createTask(@RequestBody Task task, BindingResult result) {
+        if(exists(task.getId())) {
+        	return ResponseUtil.buildBadRequestResponse("Ya existe una tarea con el identificador proporcionado");
+        }else {
+        	service.save(task);
+        	return ResponseUtil.buildCreatedResponse(task);
+        }    	
     }	
 
 	@PutMapping
-	public ResponseEntity<APIResponse<Project>> modifyProject(@RequestBody Project project) {
-		if(exists(project.getId())) {
-			service.save(project);
-	        APIResponse<Project> response = new APIResponse<Project>(200, addSingleMessage("Proyecto modificado"), project);
-	        return ResponseEntity.status(HttpStatus.OK).body(response);				
-		}else {
-			APIResponse<Project> response = new APIResponse<Project>(200, addSingleMessage("No se encontró el proyecto especificado"), project);
-			return ResponseEntity.status(HttpStatus.OK).body(response);	
+	public ResponseEntity<APIResponse<Task>> modifyTask(@RequestBody Task task) {
+		if(exists(task.getId())) {
+			service.save(task);
+        	return ResponseUtil.buildSuccessResponse(task);		
+        }else {
+			return ResponseUtil.buildBadRequestResponse("No existe la tarea con el identificador proporcionado");
 		}
 	}
 	
 	@DeleteMapping("{id}")
-	public ResponseEntity<APIResponse<Project>> deleteProject(@PathVariable("id") Integer id){
+	public ResponseEntity<APIResponse<Task>> deleteTask(@PathVariable("id") Integer id){
 		if(exists(id)) {
-			APIResponse<Project> response = new APIResponse<Project>(200, addSingleMessage("No se encontró el proyecto especificado"), null);
-			return ResponseEntity.status(HttpStatus.OK).body(response);				
-		}else {
 			service.delete(id);
-	        APIResponse<Project> response = new APIResponse<Project>(200, addSingleMessage("Proyecto eliminado"), null);
-	        return ResponseEntity.status(HttpStatus.OK).body(response);			
+        	return ResponseUtil.buildCreatedResponse(null);		
+		}else {
+			return ResponseUtil.buildBadRequestResponse("No existe la tarea con el identificador proporcionado");
 		}
 	}
 	
@@ -93,27 +82,19 @@ public class TaskController {
         for (ConstraintViolation<?> violation : ex.getConstraintViolations()) {
             errors.add(violation.getMessage());
         }
-        APIResponse<Project> response = new APIResponse<Project>(400, errors, null);
+        APIResponse<Task> response = new APIResponse<Task>(HttpStatus.BAD_REQUEST.value(), errors, null);
         return ResponseEntity.badRequest().body(response);
     }
     
-    private List<String> addSingleMessage(String message) {
-    	List<String> messages = new ArrayList<>();
-    	messages.add(message);
-    	return messages;
+    @ExceptionHandler(EntityNotFoundException.class)
+    public ResponseEntity<APIResponse<Task>> handleEntityNotFoundException(EntityNotFoundException ex) {
+    	
+    	return ResponseUtil.buildNotFoundResponse(ex.getMessage());
     }
     
+    
     private boolean exists(Integer id) {
-    	if(id == null) {
-    		return false;
-    	}else {
-    		Project project = service.findById(id);
-    		if(project == null) {
-    			return false;
-    		}else {
-    			return true;
-    		}
-    	}
+    	return id != null && service.findById(id) != null;
     }
 
 }

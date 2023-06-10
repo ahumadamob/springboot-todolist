@@ -6,15 +6,18 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 @Entity
 public class Task {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)	
 	private Integer id;
+	@NotBlank(message = "El nombre no puede estar vacío")
+	@Size(max = 200, message = "El nombre no debe superar los 200 caracteres") 
 	private String name;
-	private Boolean completed;
-	
+	private boolean completed;	
 	@ManyToOne
 	@JoinColumn(name="projectId")
 	private Project project;
@@ -31,12 +34,14 @@ public class Task {
 	public void setName(String name) {
 		this.name = name;
 	}
-	public Boolean getCompleted() {
+	
+	public boolean isCompleted() {
 		return completed;
 	}
-	public void setCompleted(Boolean completed) {
-		this.completed = completed;
+	public void setCompleted(boolean completed) {
+        this.completed = completed;
 	}
+	
 	public Project getProject() {
 		return project;
 	}

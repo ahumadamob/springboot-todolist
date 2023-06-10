@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.ahumadamob.todolist.entity.Project;
 import com.ahumadamob.todolist.service.IProjectService;
+import com.ahumadamob.todolist.util.ResponseUtil;
 
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
@@ -32,56 +33,45 @@ public class ProjectController {
 	
 	@GetMapping("/all")
 	public ResponseEntity<APIResponse<List<Project>>> getAllProjects(){
-		List<Project> projects = service.findAll();
-		if(projects.isEmpty()) {
-			APIResponse<List<Project>> response = new APIResponse<List<Project>>(200, addSingleMessage("No hay elementos"), projects);
-			return ResponseEntity.status(HttpStatus.OK).body(response);
-		}else {
-			APIResponse<List<Project>> response = new APIResponse<List<Project>>(200, null, projects);
-			return ResponseEntity.status(HttpStatus.OK).body(response);
-		}
+	    List<Project> project = service.findAll();
+	    return project.isEmpty() ? ResponseUtil.buildNotFoundResponse("No hay proyectos")
+	            : ResponseUtil.buildSuccessResponse(project);
 	};	
 	
 	@GetMapping("{id}")
 	public ResponseEntity<APIResponse<Project>> getProjectById(@PathVariable("id") Integer id){
 		Project project = service.findById(id);
-		if(project == null) {
-			APIResponse<Project> response = new APIResponse<Project>(200, addSingleMessage("No se encontró el proyecto especificado"), project);
-			return ResponseEntity.status(HttpStatus.OK).body(response);			
-		}else {
-			APIResponse<Project> response = new APIResponse<Project>(200, null, project);
-			return ResponseEntity.status(HttpStatus.OK).body(response);
-		}
+		return project == null ? ResponseUtil.buildNotFoundResponse("No se encontró el proyecto con el identificador proporcionado")
+				: ResponseUtil.buildSuccessResponse(project);	
 	};	
 	
     @PostMapping
     public ResponseEntity<APIResponse<Project>> createProject(@RequestBody Project project, BindingResult result) {
-        service.save(project);
-        APIResponse<Project> response = new APIResponse<Project>(201, addSingleMessage("Proyecto creado satisfactoriamente"), project);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        if(exists(project.getId())) {
+        	return ResponseUtil.buildBadRequestResponse("Ya existe un proyecto con el identificador proporcionado");
+        }else {
+        	service.save(project);
+        	return ResponseUtil.buildCreatedResponse(project);
+        }  
     }	
 
 	@PutMapping
 	public ResponseEntity<APIResponse<Project>> modifyProject(@RequestBody Project project) {
 		if(exists(project.getId())) {
 			service.save(project);
-	        APIResponse<Project> response = new APIResponse<Project>(200, addSingleMessage("Proyecto modificado"), project);
-	        return ResponseEntity.status(HttpStatus.OK).body(response);				
-		}else {
-			APIResponse<Project> response = new APIResponse<Project>(200, addSingleMessage("No se encontró el proyecto especificado"), project);
-			return ResponseEntity.status(HttpStatus.OK).body(response);	
+        	return ResponseUtil.buildSuccessResponse(project);		
+        }else {
+			return ResponseUtil.buildBadRequestResponse("No existe el projecto con el identificador proporcionado");
 		}
 	}
 	
 	@DeleteMapping("{id}")
 	public ResponseEntity<APIResponse<Project>> deleteProject(@PathVariable("id") Integer id){
 		if(exists(id)) {
-			APIResponse<Project> response = new APIResponse<Project>(200, addSingleMessage("No se encontró el proyecto especificado"), null);
-			return ResponseEntity.status(HttpStatus.OK).body(response);				
-		}else {
 			service.delete(id);
-	        APIResponse<Project> response = new APIResponse<Project>(200, addSingleMessage("Proyecto eliminado"), null);
-	        return ResponseEntity.status(HttpStatus.OK).body(response);			
+        	return ResponseUtil.buildCreatedResponse(null);		
+		}else {
+			return ResponseUtil.buildBadRequestResponse("No existe lel proyecto con el identificador proporcionado");
 		}
 	}
 	
@@ -91,27 +81,12 @@ public class ProjectController {
         for (ConstraintViolation<?> violation : ex.getConstraintViolations()) {
             errors.add(violation.getMessage());
         }
-        APIResponse<Project> response = new APIResponse<Project>(400, errors, null);
+        APIResponse<Project> response = new APIResponse<Project>(HttpStatus.BAD_REQUEST.value(), errors, null);
         return ResponseEntity.badRequest().body(response);
     }
     
-    private List<String> addSingleMessage(String message) {
-    	List<String> messages = new ArrayList<>();
-    	messages.add(message);
-    	return messages;
-    }
-    
-    private boolean exists(Integer id) {
-    	if(id == null) {
-    		return false;
-    	}else {
-    		Project project = service.findById(id);
-    		if(project == null) {
-    			return false;
-    		}else {
-    			return true;
-    		}
-    	}
+     private boolean exists(Integer id) {
+    	 return id != null && service.findById(id) != null;
     }
 
 }

@@ -1,6 +1,7 @@
 package com.ahumadamob.todolist.service.jpa;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -28,6 +29,16 @@ public class TaskServiceImpl implements ITaskService {
 	@Override
 	public List<Task> findAll() {
 		return repository.findAll();
+	}
+
+	@Override
+	public Task findById(Integer id) {	
+		Optional<Task> optional = repository.findById(id);
+		if(optional.isPresent()) {
+			return optional.get();
+		}else {
+			return null;
+		}
 	}
 
 }
