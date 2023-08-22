@@ -37,7 +37,43 @@ public class TaskController {
 	    List<Task> tasks = service.findAll();
 	    return tasks.isEmpty() ? ResponseUtil.buildNotFoundResponse("No hay tareas")
 	            : ResponseUtil.buildSuccessResponse(tasks);
+	}	
+	
+	@GetMapping("/all/{id}")
+	public ResponseEntity<APIResponse<List<Task>>> getAllTasksByProyectId(@PathVariable("id") Integer id) {
+	    List<Task> tasks = service.findByProjectId(id);
+	    return tasks.isEmpty() ? ResponseUtil.buildNotFoundResponse("No hay tareas")
+	            : ResponseUtil.buildSuccessResponse(tasks);
+	}	
+	
+	@GetMapping("/pending")
+	public ResponseEntity<APIResponse<List<Task>>> getPendingTasks() {
+	    List<Task> tasks = service.findPending();
+	    return tasks.isEmpty() ? ResponseUtil.buildNotFoundResponse("No hay tareas pendientes")
+	            : ResponseUtil.buildSuccessResponse(tasks);
 	}
+	
+	
+	@GetMapping("/pending/{id}")
+	public ResponseEntity<APIResponse<List<Task>>> getPendingTasksByProjectId(@PathVariable("id") Integer id) {
+	    List<Task> tasks = service.findPendingByProjectId(id);
+	    return tasks.isEmpty() ? ResponseUtil.buildNotFoundResponse("No hay tareas pendientes")
+	            : ResponseUtil.buildSuccessResponse(tasks);
+	}	
+	
+	@GetMapping("/completed")
+	public ResponseEntity<APIResponse<List<Task>>> getCompletedTasks() {
+	    List<Task> tasks = service.findCompleted();
+	    return tasks.isEmpty() ? ResponseUtil.buildNotFoundResponse("No hay tareas completadas")
+	            : ResponseUtil.buildSuccessResponse(tasks);
+	}
+	
+	@GetMapping("/completed/{id}")
+	public ResponseEntity<APIResponse<List<Task>>> getCompletedTasksByProyectId(@PathVariable("id") Integer id) {
+	    List<Task> tasks = service.findCompletedByProjectId(id);
+	    return tasks.isEmpty() ? ResponseUtil.buildNotFoundResponse("No hay tareas completadas")
+	            : ResponseUtil.buildSuccessResponse(tasks);
+	}	
 	
 	@GetMapping("{id}")
 	public ResponseEntity<APIResponse<Task>> getTaskById(@PathVariable("id") Integer id){
@@ -65,6 +101,30 @@ public class TaskController {
 			return ResponseUtil.buildBadRequestResponse("No existe la tarea con el identificador proporcionado");
 		}
 	}
+	
+	@PutMapping("/complete/{id}")
+	public ResponseEntity<APIResponse<Task>> completeTask(@PathVariable("id") Integer id) {
+		if(exists(id)) {
+			Task task = service.findById(id);
+			task.setCompleted(true);
+			service.save(task);
+        	return ResponseUtil.buildSuccessResponse(task);		
+        }else {
+			return ResponseUtil.buildBadRequestResponse("No existe la tarea con el identificador proporcionado");
+		}
+	}	
+	
+	@PutMapping("/uncomplete/{id}")
+	public ResponseEntity<APIResponse<Task>> uncompleteTask(@PathVariable("id") Integer id) {
+		if(exists(id)) {
+			Task task = service.findById(id);
+			task.setCompleted(false);
+			service.save(task);
+        	return ResponseUtil.buildSuccessResponse(task);		
+        }else {
+			return ResponseUtil.buildBadRequestResponse("No existe la tarea con el identificador proporcionado");
+		}
+	}	
 	
 	@DeleteMapping("{id}")
 	public ResponseEntity<APIResponse<Task>> deleteTask(@PathVariable("id") Integer id){

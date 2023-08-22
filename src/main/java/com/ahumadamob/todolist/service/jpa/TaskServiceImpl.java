@@ -34,11 +34,32 @@ public class TaskServiceImpl implements ITaskService {
 	@Override
 	public Task findById(Integer id) {	
 		Optional<Task> optional = repository.findById(id);
-		if(optional.isPresent()) {
-			return optional.get();
-		}else {
-			return null;
-		}
+		return optional.orElse(null);
+	}
+
+	@Override
+	public List<Task> findPending() {
+		return repository.findByCompletedFalse();
+	}
+
+	@Override
+	public List<Task> findCompleted() {
+		return repository.findByCompletedTrue();		
+	}
+
+	@Override
+	public List<Task> findByProjectId(Integer projectId) {
+		return repository.findByProjectId(projectId);
+	}
+
+	@Override
+	public List<Task> findPendingByProjectId(Integer id) {
+		return repository.findByCompletedFalseAndProjectId(id);
+	}
+
+	@Override
+	public List<Task> findCompletedByProjectId(Integer id) {
+		return repository.findByCompletedTrueAndProjectId(id);
 	}
 
 }

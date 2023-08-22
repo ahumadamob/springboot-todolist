@@ -33,12 +33,8 @@ public class ProjectServiceImpl implements IProjectService {
 
 	@Override
 	public Project findById(Integer id) {
-		Optional<Project> optional = repository.findById(id);
-		if(optional.isPresent()) {
-			return optional.get();
-		}else {
-			return null;
-		}
+	    Optional<Project> optional = repository.findById(id);
+	    return optional.orElse(null);
 	}
-
+	
 }
