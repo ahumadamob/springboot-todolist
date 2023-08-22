@@ -9,4 +9,9 @@ public interface ITaskService {
 	void delete(Integer id);
 	List<Task> findAll();
 	Task findById(Integer id);
+	List<Task> findPending();
+	List<Task> findCompleted();
+	List<Task> findByProjectId(Integer id);
+	List<Task> findPendingByProjectId(Integer id);
+	List<Task> findCompletedByProjectId(Integer id);
 }
